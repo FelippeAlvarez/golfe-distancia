@@ -6,38 +6,78 @@
 <meta name="theme-color" content="#1b5e20">
 <title>Distância de Golfe (nome pendente)</title>
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-  :root{--verde:#1b5e20;--verde2:#2e7d32;--fundo:#fafafa;--txt:#1c1c1c;--aviso:#b26a00}
+  :root{
+    --bg:#fafafa;--card:#ffffff;--txt:#1c1c1c;--mut:#5f5f5f;--borda:#d9d9d9;
+    --pri:#1b5e20;--pri2:#2e7d32;--onpri:#ffffff;--aviso:#b26a00;--perigo:#b71c1c;
+    --hudbg:rgba(255,255,255,.95);--hudtxt:#111;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-tema="claro"]){
+      --bg:#121212;--card:#1e1e1e;--txt:#f0f0f0;--mut:#b0b0b0;--borda:#3a3a3a;
+      --pri:#81c784;--pri2:#2e7d32;--onpri:#ffffff;--aviso:#ffb74d;--perigo:#ef9a9a;
+      --hudbg:rgba(18,18,18,.93);--hudtxt:#fff;
+    }
+  }
+  :root[data-tema="escuro"]{
+    --bg:#121212;--card:#1e1e1e;--txt:#f0f0f0;--mut:#b0b0b0;--borda:#3a3a3a;
+    --pri:#81c784;--pri2:#2e7d32;--onpri:#ffffff;--aviso:#ffb74d;--perigo:#ef9a9a;
+    --hudbg:rgba(18,18,18,.93);--hudtxt:#fff;
+  }
   *{box-sizing:border-box}
-  html,body{margin:0;height:100%;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--txt);background:var(--fundo)}
+  html,body{margin:0;height:100%;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--txt);background:var(--bg)}
+  button{font-family:inherit}
   #app{display:flex;flex-direction:column;height:100%}
   #telas{flex:1;position:relative;min-height:0}
-  .tela{position:absolute;inset:0;display:none;overflow:auto;background:var(--fundo)}
+  .tela{position:absolute;inset:0;display:none;overflow:auto;background:var(--bg)}
   .tela.ativa{display:block}
-  #tela-mapa{display:none;flex-direction:column}
-  #tela-mapa.ativa{display:flex}
-  #map{flex:1;min-height:0}
-  #painel{background:#fff;border-top:1px solid #ddd;padding:8px 10px;max-height:46%;overflow:auto}
-  nav{display:flex;border-top:1px solid #ccc;background:#fff;padding-bottom:env(safe-area-inset-bottom)}
-  nav button{flex:1;padding:12px 4px;border:0;background:none;font-size:14px;color:#555}
-  nav button.ativa{color:var(--verde);font-weight:700;border-top:3px solid var(--verde)}
-  .linha{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:4px 0}
-  .chip,.btn{border:1px solid var(--verde2);background:#fff;color:var(--verde);border-radius:18px;padding:8px 12px;font-size:14px}
-  .chip.sel{background:var(--verde2);color:#fff}
-  .btn.cheio{background:var(--verde2);color:#fff;border-radius:8px;padding:11px 14px;font-weight:600}
-  .btn.perigo{border-color:#b71c1c;color:#b71c1c}
-  .btn:disabled{opacity:.5}
-  .grande{font-size:30px;font-weight:700;color:var(--verde)}
-  .pequeno{font-size:12px;color:#666}
-  .aviso{color:var(--aviso);font-size:13px}
+  #tela-mapa{overflow:hidden}
+  #map{position:absolute;inset:0}
+
+  /* HUD (distância em destaque) */
+  #hud{position:absolute;top:8px;left:8px;right:8px;z-index:1000;display:flex;gap:8px;align-items:stretch;pointer-events:none}
+  #hud-card{flex:1;background:var(--hudbg);color:var(--hudtxt);border-radius:14px;padding:8px 14px;box-shadow:0 2px 8px rgba(0,0,0,.35);pointer-events:auto;min-width:0}
+  #hud-rot{font-size:13px;opacity:.8}
+  #hud-main{display:flex;align-items:baseline;gap:8px;line-height:1}
+  #hud-num{font-size:68px;font-weight:800;letter-spacing:-1px}
+  #hud-un{font-size:26px;font-weight:700;opacity:.85}
+  #hud-sub{font-size:15px;margin-top:2px}
+  #hud-gps{font-size:13px;opacity:.85;margin-top:2px}
+  #hud-gps.aviso{color:var(--aviso);opacity:1;font-weight:600}
+  #btn-seguir{pointer-events:auto;width:60px;border:0;border-radius:14px;background:var(--hudbg);color:var(--hudtxt);font-size:30px;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+  #btn-seguir.on{background:var(--pri2);color:#fff}
+
+  /* Painel inferior recolhível */
+  #sheet{position:absolute;left:0;right:0;bottom:0;z-index:1000;background:var(--card);color:var(--txt);border-radius:18px 18px 0 0;box-shadow:0 -2px 10px rgba(0,0,0,.3);max-height:58%;display:flex;flex-direction:column}
+  #sheet-topo{display:flex;gap:8px;align-items:center;padding:10px 10px 6px}
+  #sheet-topo .chip{flex:1}
+  #sheet-corpo{padding:0 12px 12px;overflow:auto}
+  #sheet.fechado #sheet-corpo{display:none}
+  #btn-recolher{width:52px;min-height:48px;border:1px solid var(--borda);background:var(--card);color:var(--txt);border-radius:12px;font-size:20px}
+
+  nav{display:flex;border-top:1px solid var(--borda);background:var(--card);padding-bottom:env(safe-area-inset-bottom)}
+  nav button{flex:1;padding:15px 4px;border:0;background:none;font-size:15px;color:var(--mut)}
+  nav button.ativa{color:var(--pri);font-weight:700;border-top:4px solid var(--pri2);padding-top:11px}
+
+  .linha{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0}
+  .chip,.btn{min-height:48px;border:2px solid var(--pri2);background:var(--card);color:var(--pri);border-radius:24px;padding:8px 16px;font-size:16px;font-weight:600}
+  .chip.sel{background:var(--pri2);color:#fff}
+  .btn.cheio{background:var(--pri2);color:#fff;border-radius:12px;padding:10px 16px;font-weight:700;flex:1}
+  .btn.perigo{border-color:var(--perigo);color:var(--perigo);border-radius:12px}
+  .btn:disabled{opacity:.45}
+  .grande{font-size:32px;font-weight:800;color:var(--pri)}
+  .pequeno{font-size:14px;color:var(--mut)}
+  .aviso{color:var(--aviso);font-size:14px;font-weight:600}
   .sec{padding:14px;max-width:720px;margin:0 auto}
-  h2{margin:.2em 0 .5em;font-size:20px} h3{margin:1em 0 .3em;font-size:16px}
-  select,textarea,input{font-size:16px;padding:8px;border:1px solid #bbb;border-radius:6px;width:100%}
-  table{border-collapse:collapse;width:100%;font-size:14px}
-  td,th{border-bottom:1px solid #e3e3e3;padding:6px 4px;text-align:left}
-  .pre{white-space:pre-wrap;font-size:14px;line-height:1.45}
-  .bandeira{font-size:22px;line-height:22px;text-align:center}
+  h2{margin:.2em 0 .5em;font-size:22px} h3{margin:1em 0 .3em;font-size:17px}
+  select,textarea,input{font-size:17px;padding:10px;border:1px solid var(--borda);border-radius:8px;width:100%;background:var(--card);color:var(--txt)}
+  table{border-collapse:collapse;width:100%;font-size:15px}
+  td,th{border-bottom:1px solid var(--borda);padding:8px 4px;text-align:left}
+  .pre{white-space:pre-wrap;font-size:15px;line-height:1.5}
+  .bandeira{font-size:26px;line-height:26px;text-align:center}
+  .leaflet-container{background:#222}
 </style>
 </head>
 <body>
@@ -46,35 +86,50 @@
     <!-- MAPA -->
     <section id="tela-mapa" class="tela ativa">
       <div id="map"></div>
-      <div id="painel">
-        <div class="linha">
+
+      <div id="hud">
+        <div id="hud-card">
+          <div id="hud-rot">—</div>
+          <div id="hud-main"><span id="hud-num">—</span><span id="hud-un"></span></div>
+          <div id="hud-sub"></div>
+          <div id="hud-gps">Aguardando GPS…</div>
+        </div>
+        <button id="btn-seguir" class="on" title="Centralizar em mim" aria-label="Centralizar em mim">◎</button>
+      </div>
+
+      <div id="sheet">
+        <div id="sheet-topo">
           <button class="chip sel" id="modo-alvo">Alvo</button>
           <button class="chip" id="modo-tacada">Tacada</button>
-          <span class="pequeno" id="status-gps">Aguardando GPS…</span>
+          <button id="btn-recolher" aria-label="Recolher ou abrir painel">▾</button>
         </div>
-        <!-- Modo alvo -->
-        <div id="p-alvo">
-          <div class="linha">
-            <span class="pequeno">Toque no mapa para marcar:</span>
-            <button class="chip" data-pt="frente">Frente</button>
-            <button class="chip sel" data-pt="centro">Centro</button>
-            <button class="chip" data-pt="fundo">Fundo</button>
-            <button class="chip" id="limpar-alvo">Limpar</button>
-          </div>
-          <div id="dist-alvo" class="pequeno">Nenhum alvo marcado.</div>
-        </div>
-        <!-- Modo tacada -->
-        <div id="p-tacada" style="display:none">
-          <div class="linha">
-            <button class="btn cheio" id="btn-saida">Marcar saída (bola aqui)</button>
-            <button class="btn cheio" id="btn-chegada" disabled>Marcar chegada</button>
-          </div>
-          <div id="res-tacada" class="pequeno">Fique ao lado da bola e toque em “Marcar saída”. Dê a tacada, caminhe até a bola e toque em “Marcar chegada”.</div>
-          <div id="salvar-tacada" style="display:none">
-            <div class="linha"><select id="sel-taco"></select></div>
+        <div id="sheet-corpo">
+          <!-- Modo alvo -->
+          <div id="p-alvo">
             <div class="linha">
-              <button class="btn cheio" id="btn-salvar">Salvar tacada</button>
-              <button class="btn perigo" id="btn-descartar">Descartar</button>
+              <span class="pequeno">Toque no mapa para marcar:</span>
+            </div>
+            <div class="linha">
+              <button class="chip" data-pt="frente">Frente</button>
+              <button class="chip sel" data-pt="centro">Centro</button>
+              <button class="chip" data-pt="fundo">Fundo</button>
+              <button class="chip" id="limpar-alvo">Limpar</button>
+            </div>
+            <div id="dist-alvo" class="pequeno">Nenhum alvo marcado.</div>
+          </div>
+          <!-- Modo tacada -->
+          <div id="p-tacada" style="display:none">
+            <div class="linha">
+              <button class="btn cheio" id="btn-saida">Marcar saída</button>
+              <button class="btn cheio" id="btn-chegada" disabled>Marcar chegada</button>
+            </div>
+            <div id="res-tacada" class="pequeno"></div>
+            <div id="salvar-tacada" style="display:none">
+              <div class="linha"><select id="sel-taco"></select></div>
+              <div class="linha">
+                <button class="btn cheio" id="btn-salvar">Salvar tacada</button>
+                <button class="btn perigo" id="btn-descartar">Descartar</button>
+              </div>
             </div>
           </div>
         </div>
@@ -95,9 +150,11 @@
       <h2>Ajustes</h2>
       <h3>Unidade de distância</h3>
       <select id="cfg-unidade"><option value="yd">Jardas (padrão)</option><option value="m">Metros</option></select>
+      <h3>Aparência</h3>
+      <select id="cfg-tema"><option value="auto">Automático (segue o celular)</option><option value="claro">Claro</option><option value="escuro">Escuro</option></select>
       <h3>Tacos (separados por vírgula)</h3>
       <textarea id="cfg-tacos" rows="4"></textarea>
-      <p><button class="btn cheio" id="cfg-salvar">Salvar ajustes</button></p>
+      <p><button class="btn cheio" id="cfg-salvar" style="width:100%">Salvar ajustes</button></p>
       <p class="pequeno" id="cfg-msg"></p>
     </div></section>
 
@@ -116,7 +173,7 @@
 <script>
 (function(){
 'use strict';
-var VERSAO = '0.1.0 (protótipo)';
+var VERSAO = '0.2.0 (protótipo)';
 var NOME_APP = 'Nome do app: PENDENTE';
 var COPYRIGHT = '© 2026 Felippe Alvarez';
 var LIMITE_AVISO_M = 10;      // aviso se precisão pior que isso
@@ -126,8 +183,18 @@ var TEMPO_MEDIA_MS = 8000;    // tempo de média por marcação
 function ler(k, padrao){ try{ var v = localStorage.getItem(k); return v ? JSON.parse(v) : padrao; }catch(e){ return padrao; } }
 function gravar(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } }
 
-var cfg = ler('cfg', {unidade:'yd', tacos:['Driver','Madeira 3','Híbrido','Ferro 4','Ferro 5','Ferro 6','Ferro 7','Ferro 8','Ferro 9','Pitching','Sand','Lob','Putter']});
+var cfg = ler('cfg', {});
+if(!cfg.unidade) cfg.unidade = 'yd';
+if(!cfg.tema) cfg.tema = 'auto';
+if(!cfg.tacos || !cfg.tacos.length) cfg.tacos = ['Driver','Madeira 3','Híbrido','Ferro 4','Ferro 5','Ferro 6','Ferro 7','Ferro 8','Ferro 9','Pitching','Sand','Lob','Putter'];
 var hist = ler('hist', []);
+
+function aplicaTema(){
+  var r = document.documentElement;
+  if(cfg.tema === 'claro' || cfg.tema === 'escuro') r.setAttribute('data-tema', cfg.tema);
+  else r.removeAttribute('data-tema');
+}
+aplicaTema();
 
 // ---------- distância (elipsoide WGS84, aproximação local; erro de mm até alguns km) ----------
 function dist(a,b){
@@ -137,49 +204,74 @@ function dist(a,b){
   var dy = (b.lat-a.lat)*rad*mLat, dx = (b.lng-a.lng)*rad*mLon;
   return Math.hypot(dx,dy);
 }
-function fmt(m){
-  if(cfg.unidade==='yd') return Math.round(m/0.9144) + ' jd';
-  return Math.round(m) + ' m';
-}
-function fmtPrec(m){
-  if(cfg.unidade==='yd') return '±' + Math.round(m/0.9144) + ' jd';
-  return '±' + Math.round(m) + ' m';
-}
+function numU(m){ return cfg.unidade==='yd' ? Math.round(m/0.9144) : Math.round(m); }
+function un(){ return cfg.unidade==='yd' ? 'jd' : 'm'; }
+function fmt(m){ return numU(m) + ' ' + un(); }
+function fmtPrec(m){ return '±' + numU(m) + ' ' + un(); }
 
 // ---------- mapa ----------
-var map = L.map('map', {zoomControl:true, maxZoom:19}).setView([-22.99,-43.36], 16);
+var map = L.map('map', {zoomControl:false, maxZoom:19}).setView([-22.99,-43.36], 16);
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
   maxZoom:19,
   attribution:'Imagens: Esri, Maxar, Earthstar Geographics e comunidade GIS | Mapa: Leaflet'
 }).addTo(map);
 
-var pos = null, marcaPos = null, circPos = null, primeiroFix = true;
+var pos = null, marcaPos = null, circPos = null, primeiroFix = true, seguir = true;
 
+var btnSeguir = document.getElementById('btn-seguir');
+function marcaSeguir(){ btnSeguir.classList.toggle('on', seguir); }
+btnSeguir.addEventListener('click', function(){
+  seguir = true; marcaSeguir();
+  if(pos) map.setView([pos.lat,pos.lng], Math.max(map.getZoom(), 17));
+});
+map.on('dragstart', function(){ seguir = false; marcaSeguir(); });
+
+// ---------- GPS (ligado só com a tela do mapa aberta) ----------
+var watchId = null, telaAtual = 'tela-mapa';
 function onPos(p){
   pos = {lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy, t:p.timestamp};
   if(!marcaPos){
-    marcaPos = L.circleMarker([pos.lat,pos.lng], {radius:7, color:'#fff', weight:2, fillColor:'#1976d2', fillOpacity:1}).addTo(map);
+    marcaPos = L.circleMarker([pos.lat,pos.lng], {radius:8, color:'#fff', weight:3, fillColor:'#1976d2', fillOpacity:1}).addTo(map);
     circPos = L.circle([pos.lat,pos.lng], {radius:pos.acc, color:'#1976d2', weight:1, fillOpacity:.12}).addTo(map);
   } else {
     marcaPos.setLatLng([pos.lat,pos.lng]); circPos.setLatLng([pos.lat,pos.lng]); circPos.setRadius(pos.acc);
   }
   if(primeiroFix){ map.setView([pos.lat,pos.lng], 18); primeiroFix = false; }
-  var st = document.getElementById('status-gps');
-  st.textContent = 'GPS ' + fmtPrec(pos.acc);
-  st.className = pos.acc > LIMITE_AVISO_M ? 'aviso' : 'pequeno';
-  if(pos.acc > LIMITE_AVISO_M) st.textContent += ' — precisão baixa';
+  else if(seguir){ map.panTo([pos.lat,pos.lng], {animate:true, duration:.5}); }
+  atualizaGpsStatus();
   atualizaAlvo();
+  atualizaHud();
   amostrar(pos);
 }
 function onErro(e){
   var msg = {1:'Permissão de localização negada.',2:'Posição indisponível.',3:'Tempo esgotado para obter GPS.'}[e.code] || 'Erro de GPS.';
-  var st = document.getElementById('status-gps'); st.textContent = msg; st.className = 'aviso';
+  var st = document.getElementById('hud-gps'); st.textContent = msg; st.className = 'aviso';
 }
-if('geolocation' in navigator){
-  navigator.geolocation.watchPosition(onPos, onErro, {enableHighAccuracy:true, maximumAge:0, timeout:20000});
-} else {
-  document.getElementById('status-gps').textContent = 'Este aparelho/navegador não oferece geolocalização.';
+function atualizaGpsStatus(){
+  var st = document.getElementById('hud-gps');
+  if(!pos){ return; }
+  st.textContent = 'GPS ' + fmtPrec(pos.acc) + (pos.acc > LIMITE_AVISO_M ? ' — precisão baixa' : '');
+  st.className = pos.acc > LIMITE_AVISO_M ? 'aviso' : '';
 }
+function iniciaGps(){
+  if(watchId !== null) return;
+  if(!('geolocation' in navigator)){
+    var st0 = document.getElementById('hud-gps'); st0.textContent = 'Este aparelho/navegador não oferece geolocalização.'; st0.className = 'aviso'; return;
+  }
+  var st = document.getElementById('hud-gps'); st.textContent = 'Buscando GPS…'; st.className = '';
+  watchId = navigator.geolocation.watchPosition(onPos, onErro, {enableHighAccuracy:true, maximumAge:0, timeout:20000});
+}
+function paraGps(){
+  if(watchId !== null){ navigator.geolocation.clearWatch(watchId); watchId = null; }
+  pos = null;
+  cancelaAmostragem();
+  var st = document.getElementById('hud-gps'); st.textContent = 'GPS pausado (economiza bateria)'; st.className = '';
+  atualizaAlvo(); atualizaHud();
+}
+function sincronizaGps(){
+  if(telaAtual === 'tela-mapa' && !document.hidden) iniciaGps(); else paraGps();
+}
+document.addEventListener('visibilitychange', sincronizaGps);
 
 // ---------- modo alvo ----------
 var alvos = {frente:null, centro:null, fundo:null}, marcasAlvo = {}, tipoAlvo = 'centro';
@@ -194,45 +286,99 @@ map.on('click', function(ev){
   if(modo!=='alvo') return;
   alvos[tipoAlvo] = {lat:ev.latlng.lat, lng:ev.latlng.lng};
   if(marcasAlvo[tipoAlvo]) marcasAlvo[tipoAlvo].setLatLng(ev.latlng);
-  else marcasAlvo[tipoAlvo] = L.marker(ev.latlng, {icon:L.divIcon({className:'', html:'<div class="bandeira">'+(tipoAlvo==='centro'?'🚩':'📍')+'</div>', iconSize:[24,24], iconAnchor:[12,22]})}).addTo(map);
-  atualizaAlvo();
+  else marcasAlvo[tipoAlvo] = L.marker(ev.latlng, {icon:L.divIcon({className:'', html:'<div class="bandeira">'+(tipoAlvo==='centro'?'🚩':'📍')+'</div>', iconSize:[28,28], iconAnchor:[14,26]})}).addTo(map);
+  atualizaAlvo(); atualizaHud();
 });
 document.getElementById('limpar-alvo').addEventListener('click', function(){
   Object.keys(marcasAlvo).forEach(function(k){ map.removeLayer(marcasAlvo[k]); });
-  marcasAlvo = {}; alvos = {frente:null, centro:null, fundo:null}; atualizaAlvo();
+  marcasAlvo = {}; alvos = {frente:null, centro:null, fundo:null}; atualizaAlvo(); atualizaHud();
 });
 function atualizaAlvo(){
   var el = document.getElementById('dist-alvo');
   var partes = [];
   ['frente','centro','fundo'].forEach(function(k){
     if(alvos[k]){
-      partes.push(pos ? '<span class="grande">'+fmt(dist(pos,alvos[k]))+'</span> <span class="pequeno">'+rotulo[k]+'</span>' : rotulo[k]+': aguardando GPS');
+      partes.push(pos ? '<b>'+rotulo[k]+':</b> '+fmt(dist(pos,alvos[k])) : rotulo[k]+': aguardando GPS');
     }
   });
   if(!partes.length){ el.textContent = 'Nenhum alvo marcado.'; return; }
-  el.innerHTML = partes.join(' &nbsp; ') + (pos ? '<div class="pequeno">Sua posição '+fmtPrec(pos.acc)+'. Distância em linha reta, sem desnível nem vento.</div>' : '');
+  el.innerHTML = partes.join(' &nbsp;·&nbsp; ') + '<div class="pequeno">Linha reta horizontal: sem desnível nem vento.</div>';
 }
 
-// ---------- modo tacada ----------
+// ---------- HUD ----------
+function setHud(rot, num, sub){
+  document.getElementById('hud-rot').textContent = rot;
+  document.getElementById('hud-num').textContent = num;
+  document.getElementById('hud-un').textContent = num === '—' ? '' : un();
+  document.getElementById('hud-sub').textContent = sub || '';
+}
+function atualizaHud(){
+  if(modo === 'alvo'){
+    var principal = alvos.centro ? 'centro' : (alvos.frente ? 'frente' : (alvos.fundo ? 'fundo' : null));
+    if(!principal){ setHud('Distância até o alvo', '—', 'Toque no mapa para marcar o alvo'); return; }
+    if(!pos){ setHud('Até ' + rotulo[principal].toLowerCase() + ' do green', '—', 'Aguardando GPS…'); return; }
+    var outros = [];
+    ['frente','centro','fundo'].forEach(function(k){
+      if(k !== principal && alvos[k]) outros.push(rotulo[k] + ' ' + numU(dist(pos, alvos[k])));
+    });
+    setHud('Até ' + rotulo[principal].toLowerCase() + ' do green', String(numU(dist(pos, alvos[principal]))), outros.join('  ·  '));
+  } else {
+    if(saida && chegada){
+      setHud('Tacada medida', String(numU(dist(saida, chegada))), 'Escolha o taco e salve');
+    } else if(saida){
+      if(!pos){ setHud('Desde a saída', '—', 'Aguardando GPS…'); return; }
+      setHud('Desde a saída (ao vivo)', String(numU(dist(saida, pos))), 'Chegue na bola e toque em “Marcar chegada”');
+    } else {
+      setHud('Distância da tacada', '—', 'Marque a saída ao lado da bola');
+    }
+  }
+}
+
+// ---------- painel recolhível e modos ----------
 var modo = 'alvo';
+var sheet = document.getElementById('sheet');
+document.getElementById('btn-recolher').addEventListener('click', function(){
+  var fechado = sheet.classList.toggle('fechado');
+  this.textContent = fechado ? '▴' : '▾';
+});
 function setModo(m){
   modo = m;
   document.getElementById('modo-alvo').classList.toggle('sel', m==='alvo');
   document.getElementById('modo-tacada').classList.toggle('sel', m==='tacada');
   document.getElementById('p-alvo').style.display = m==='alvo' ? '' : 'none';
   document.getElementById('p-tacada').style.display = m==='tacada' ? '' : 'none';
-  setTimeout(function(){ map.invalidateSize(); }, 50);
+  atualizaHud();
 }
 document.getElementById('modo-alvo').addEventListener('click', function(){ setModo('alvo'); });
 document.getElementById('modo-tacada').addEventListener('click', function(){ setModo('tacada'); });
 
-var amostras = null, amostrando = null, saida = null, chegada = null, linhaTacada = null, marcasT = [];
+// ---------- modo tacada ----------
+var amostras = null, amostrando = null, saida = ler('saida', null), chegada = null, linhaTacada = null, marcasT = [];
+var TXT_INICIAL = 'Fique ao lado da bola e toque em “Marcar saída”. Dê a tacada, caminhe até a bola e toque em “Marcar chegada”.';
 function amostrar(p){ if(amostras) amostras.push({lat:p.lat, lng:p.lng, acc:p.acc}); }
 function mediaPonderada(a){
   var sw=0, slat=0, slng=0;
   a.forEach(function(s){ var w = 1/Math.max(s.acc,1)/Math.max(s.acc,1); sw+=w; slat+=w*s.lat; slng+=w*s.lng; });
   var accs = a.map(function(s){ return s.acc; }).sort(function(x,y){ return x-y; });
   return {lat:slat/sw, lng:slng/sw, acc:accs[Math.floor(accs.length/2)], n:a.length};
+}
+function restauraBotoesTacada(){
+  document.getElementById('btn-saida').disabled = false;
+  document.getElementById('btn-chegada').disabled = !saida;
+  var res = document.getElementById('res-tacada');
+  if(chegada){
+    var d = dist(saida, chegada), err = Math.hypot(saida.acc, chegada.acc);
+    res.innerHTML = '<span class="grande">'+fmt(d)+'</span> <span class="pequeno">(incerteza estimada ≈ '+fmtPrec(err)+')</span>' +
+      (err > LIMITE_AVISO_M ? '<div class="aviso">Precisão baixa nesta medição; trate o valor como estimativa.</div>' : '');
+  } else if(saida){
+    res.textContent = 'Saída marcada ('+fmtPrec(saida.acc)+'). Dê a tacada, vá até a bola e toque em “Marcar chegada”.';
+  } else {
+    res.textContent = TXT_INICIAL;
+  }
+}
+function cancelaAmostragem(){
+  if(amostrando){ clearInterval(amostrando); amostrando = null; }
+  if(amostras){ amostras = null; restauraBotoesTacada(); }
 }
 function marcarPonto(rotuloPonto, aoFim){
   if(!pos){ alert('Sem posição de GPS ainda. Aguarde o sinal.'); return; }
@@ -245,6 +391,7 @@ function marcarPonto(rotuloPonto, aoFim){
     res.textContent = 'Medindo '+rotuloPonto+'… fique parado ('+rest+' s)';
     if(Date.now()-t0 >= TEMPO_MEDIA_MS){
       clearInterval(amostrando); amostrando = null;
+      if(!amostras){ return; }
       var m = mediaPonderada(amostras); amostras = null;
       aoFim(m);
     }
@@ -254,27 +401,19 @@ function desenhaTacada(){
   marcasT.forEach(function(x){ map.removeLayer(x); }); marcasT = [];
   if(linhaTacada){ map.removeLayer(linhaTacada); linhaTacada = null; }
   [saida, chegada].forEach(function(p, i){
-    if(p) marcasT.push(L.circleMarker([p.lat,p.lng], {radius:6, color:'#fff', weight:2, fillColor:i?'#c62828':'#f9a825', fillOpacity:1}).addTo(map));
+    if(p) marcasT.push(L.circleMarker([p.lat,p.lng], {radius:7, color:'#fff', weight:3, fillColor:i?'#c62828':'#f9a825', fillOpacity:1}).addTo(map));
   });
   if(saida && chegada) linhaTacada = L.polyline([[saida.lat,saida.lng],[chegada.lat,chegada.lng]], {color:'#fff', weight:3, dashArray:'6 6'}).addTo(map);
 }
 document.getElementById('btn-saida').addEventListener('click', function(){
   chegada = null; document.getElementById('salvar-tacada').style.display = 'none';
   marcarPonto('saída', function(m){
-    saida = m; desenhaTacada();
-    document.getElementById('btn-saida').disabled = false;
-    document.getElementById('btn-chegada').disabled = false;
-    document.getElementById('res-tacada').textContent = 'Saída marcada ('+fmtPrec(m.acc)+'). Dê a tacada, vá até a bola e toque em “Marcar chegada”.';
+    saida = m; gravar('saida', saida); desenhaTacada(); restauraBotoesTacada(); atualizaHud();
   });
 });
 document.getElementById('btn-chegada').addEventListener('click', function(){
   marcarPonto('chegada', function(m){
-    chegada = m; desenhaTacada();
-    document.getElementById('btn-saida').disabled = false;
-    document.getElementById('btn-chegada').disabled = false;
-    var d = dist(saida, chegada), err = Math.hypot(saida.acc, chegada.acc);
-    document.getElementById('res-tacada').innerHTML = '<span class="grande">'+fmt(d)+'</span> <span class="pequeno">(incerteza estimada ≈ '+fmtPrec(err)+')</span>' +
-      (err > LIMITE_AVISO_M ? '<div class="aviso">Precisão baixa nesta medição; trate o valor como estimativa.</div>' : '');
+    chegada = m; desenhaTacada(); restauraBotoesTacada(); atualizaHud();
     document.getElementById('salvar-tacada').style.display = '';
   });
 });
@@ -286,10 +425,9 @@ document.getElementById('btn-salvar').addEventListener('click', function(){
 });
 document.getElementById('btn-descartar').addEventListener('click', limpaTacada);
 function limpaTacada(){
-  saida = chegada = null; desenhaTacada();
+  saida = null; chegada = null; gravar('saida', null); desenhaTacada();
   document.getElementById('salvar-tacada').style.display = 'none';
-  document.getElementById('btn-chegada').disabled = true;
-  document.getElementById('res-tacada').textContent = 'Fique ao lado da bola e toque em “Marcar saída”. Dê a tacada, caminhe até a bola e toque em “Marcar chegada”.';
+  restauraBotoesTacada(); atualizaHud();
 }
 
 // ---------- tacos / ajustes ----------
@@ -298,12 +436,14 @@ function renderTacos(){
   cfg.tacos.forEach(function(t){ var o = document.createElement('option'); o.textContent = t; s.appendChild(o); });
   document.getElementById('cfg-tacos').value = cfg.tacos.join(', ');
   document.getElementById('cfg-unidade').value = cfg.unidade;
+  document.getElementById('cfg-tema').value = cfg.tema;
 }
 document.getElementById('cfg-salvar').addEventListener('click', function(){
   cfg.unidade = document.getElementById('cfg-unidade').value;
+  cfg.tema = document.getElementById('cfg-tema').value;
   var l = document.getElementById('cfg-tacos').value.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
   if(l.length) cfg.tacos = l;
-  gravar('cfg', cfg); renderTacos(); renderHist(); atualizaAlvo();
+  gravar('cfg', cfg); aplicaTema(); renderTacos(); renderHist(); atualizaAlvo(); atualizaGpsStatus(); restauraBotoesTacada(); atualizaHud();
   document.getElementById('cfg-msg').textContent = 'Ajustes salvos.';
 });
 
@@ -340,11 +480,14 @@ document.getElementById('sobre').textContent =
 NOME_APP + '\nVersão: ' + VERSAO + '\n' + COPYRIGHT + '. Todos os direitos reservados.\n\n' +
 'MANUAL DE USO\n' +
 '1) Permita o acesso à localização quando o navegador pedir. Use ao ar livre; o GPS do celular costuma errar de 3 a 5 m em céu aberto e mais perto de árvores e prédios.\n' +
-'2) Aba Mapa > Alvo: toque no mapa para marcar frente, centro e fundo do green. A distância é atualizada conforme você anda.\n' +
-'3) Aba Mapa > Tacada: fique ao lado da bola, toque em “Marcar saída” e aguarde alguns segundos parado. Dê a tacada, vá até a bola, toque em “Marcar chegada”, escolha o taco e salve.\n' +
-'4) Histórico mostra médias por taco. Ajustes permite trocar jardas/metros e editar os tacos.\n' +
-'5) A distância é em linha reta sobre o terreno (horizontal): não considera desnível, vento ou altitude. Ao lado de cada valor o app mostra a incerteza informada pelo GPS.\n' +
-'6) Em competições, confira se a regra local permite aparelhos de medição de distância.\n\n' +
+'2) A distância aparece em número grande no topo do mapa. O botão ◎ centraliza o mapa em você; ao arrastar o mapa, ele para de seguir.\n' +
+'3) Mapa > Alvo: toque no mapa para marcar frente, centro e fundo do green. A distância é atualizada conforme você anda.\n' +
+'4) Mapa > Tacada: fique ao lado da bola, toque em “Marcar saída” e aguarde alguns segundos parado. Dê a tacada e caminhe: o número do topo mostra a distância desde a saída ao vivo. Na bola, toque em “Marcar chegada”, escolha o taco e salve.\n' +
+'5) O botão ▾ recolhe o painel para ver mais mapa.\n' +
+'6) Histórico mostra médias por taco. Ajustes permite trocar jardas/metros, o tema (claro/escuro) e editar os tacos.\n' +
+'7) O GPS só fica ligado com a aba Mapa aberta e a tela ativa, para economizar bateria. A saída marcada fica guardada no aparelho.\n' +
+'8) A distância é em linha reta sobre o terreno (horizontal): não considera desnível, vento ou altitude. O app mostra a incerteza informada pelo GPS.\n' +
+'9) Em competições, confira se a regra local permite aparelhos de medição de distância.\n\n' +
 'TERMOS DE USO (MINUTA — revisar antes de distribuir)\n' +
 'Este aplicativo é fornecido “no estado em que se encontra”, sem garantia de precisão ou de adequação a finalidade específica. As distâncias são estimativas obtidas por GPS e não substituem medição profissional nem servem como prova técnica. O usuário é responsável por seu uso, inclusive quanto às regras de competições e do campo.\n\n' +
 'POLÍTICA DE PRIVACIDADE (MINUTA — revisar antes de distribuir)\n' +
@@ -352,19 +495,25 @@ NOME_APP + '\nVersão: ' + VERSAO + '\n' + COPYRIGHT + '. Todos os direitos rese
 'CRÉDITOS E LICENÇAS\n' +
 '• Leaflet 1.9.4 — © Vladimir Agafonkin e colaboradores, licença BSD-2-Clause (leafletjs.com).\n' +
 '• Imagens de satélite: Esri World Imagery — Esri, Maxar, Earthstar Geographics e comunidade de usuários GIS. Sujeito aos termos de uso do provedor; confirmar a adequação ao uso pretendido (inclusive distribuição a terceiros) antes de publicar.\n' +
+'• Ícone do aplicativo: desenho genérico criado para este projeto.\n' +
 '• Código do aplicativo: ' + COPYRIGHT + '. Licença de distribuição: PENDENTE.\n';
 
 // ---------- navegação ----------
 document.querySelectorAll('nav button').forEach(function(b){
   b.addEventListener('click', function(){
+    telaAtual = b.dataset.tela;
     document.querySelectorAll('nav button').forEach(function(x){ x.classList.toggle('ativa', x===b); });
-    document.querySelectorAll('.tela').forEach(function(t){ t.classList.toggle('ativa', t.id===b.dataset.tela); });
-    if(b.dataset.tela==='tela-mapa') setTimeout(function(){ map.invalidateSize(); }, 50);
-    if(b.dataset.tela==='tela-hist') renderHist();
+    document.querySelectorAll('.tela').forEach(function(t){ t.classList.toggle('ativa', t.id===telaAtual); });
+    if(telaAtual==='tela-mapa') setTimeout(function(){ map.invalidateSize(); }, 50);
+    if(telaAtual==='tela-hist') renderHist();
+    sincronizaGps();
   });
 });
 
-renderTacos(); renderHist();
+// ---------- início ----------
+renderTacos(); renderHist(); desenhaTacada(); restauraBotoesTacada(); atualizaAlvo(); atualizaHud();
+if(saida){ map.setView([saida.lat, saida.lng], 17); }
+sincronizaGps();
 if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
 })();
 </script>
