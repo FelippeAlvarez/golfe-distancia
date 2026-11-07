@@ -1,0 +1,9 @@
+{
+  "name": "Distância de Golfe (nome pendente)",
+  "short_name": "Golfe",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#fafafa",
+  "theme_color": "#1b5e20",
+  "lang": "pt-BR"
+}
