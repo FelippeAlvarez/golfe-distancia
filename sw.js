@@ -1,5 +1,5 @@
 // Cache simples do "casco" do app (somente arquivos do próprio app).
-var CACHE = 'golfe-v0.2.0';
+var CACHE = 'golfe-v0.3.0';
 var ARQUIVOS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
 self.addEventListener('install', function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){ return c.addAll(ARQUIVOS); }));

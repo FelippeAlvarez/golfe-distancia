@@ -36,10 +36,9 @@
   #tela-mapa{overflow:hidden}
   #map{position:absolute;inset:0}
 
-  /* HUD (distância em destaque) */
   #hud{position:absolute;top:8px;left:8px;right:8px;z-index:1000;display:flex;gap:8px;align-items:stretch;pointer-events:none}
   #hud-card{flex:1;background:var(--hudbg);color:var(--hudtxt);border-radius:14px;padding:8px 14px;box-shadow:0 2px 8px rgba(0,0,0,.35);pointer-events:auto;min-width:0}
-  #hud-rot{font-size:13px;opacity:.8}
+  #hud-rot{font-size:13px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #hud-main{display:flex;align-items:baseline;gap:8px;line-height:1}
   #hud-num{font-size:68px;font-weight:800;letter-spacing:-1px}
   #hud-un{font-size:26px;font-weight:700;opacity:.85}
@@ -49,8 +48,7 @@
   #btn-seguir{pointer-events:auto;width:60px;border:0;border-radius:14px;background:var(--hudbg);color:var(--hudtxt);font-size:30px;box-shadow:0 2px 8px rgba(0,0,0,.35)}
   #btn-seguir.on{background:var(--pri2);color:#fff}
 
-  /* Painel inferior recolhível */
-  #sheet{position:absolute;left:0;right:0;bottom:0;z-index:1000;background:var(--card);color:var(--txt);border-radius:18px 18px 0 0;box-shadow:0 -2px 10px rgba(0,0,0,.3);max-height:58%;display:flex;flex-direction:column}
+  #sheet{position:absolute;left:0;right:0;bottom:0;z-index:1000;background:var(--card);color:var(--txt);border-radius:18px 18px 0 0;box-shadow:0 -2px 10px rgba(0,0,0,.3);max-height:60%;display:flex;flex-direction:column}
   #sheet-topo{display:flex;gap:8px;align-items:center;padding:10px 10px 6px}
   #sheet-topo .chip{flex:1}
   #sheet-corpo{padding:0 12px 12px;overflow:auto}
@@ -64,20 +62,28 @@
   .linha{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0}
   .chip,.btn{min-height:48px;border:2px solid var(--pri2);background:var(--card);color:var(--pri);border-radius:24px;padding:8px 16px;font-size:16px;font-weight:600}
   .chip.sel{background:var(--pri2);color:#fff}
-  .btn.cheio{background:var(--pri2);color:#fff;border-radius:12px;padding:10px 16px;font-weight:700;flex:1}
-  .btn.perigo{border-color:var(--perigo);color:var(--perigo);border-radius:12px}
-  .btn:disabled{opacity:.45}
+  .chip.peq{min-height:40px;padding:4px 12px;font-size:15px}
+  .btn{border-radius:12px}
+  .btn.cheio{background:var(--pri2);color:#fff;padding:10px 16px;font-weight:700;flex:1}
+  .btn.perigo{border-color:var(--perigo);color:var(--perigo)}
+  .btn:disabled,.chip:disabled{opacity:.45}
   .grande{font-size:32px;font-weight:800;color:var(--pri)}
   .pequeno{font-size:14px;color:var(--mut)}
   .aviso{color:var(--aviso);font-size:14px;font-weight:600}
   .sec{padding:14px;max-width:720px;margin:0 auto}
   h2{margin:.2em 0 .5em;font-size:22px} h3{margin:1em 0 .3em;font-size:17px}
-  select,textarea,input{font-size:17px;padding:10px;border:1px solid var(--borda);border-radius:8px;width:100%;background:var(--card);color:var(--txt)}
+  select,textarea,input[type=text]{font-size:17px;padding:10px;border:1px solid var(--borda);border-radius:8px;width:100%;background:var(--card);color:var(--txt)}
+  .linha select{width:auto;flex:1}
   table{border-collapse:collapse;width:100%;font-size:15px}
   td,th{border-bottom:1px solid var(--borda);padding:8px 4px;text-align:left}
   .pre{white-space:pre-wrap;font-size:15px;line-height:1.5}
   .bandeira{font-size:26px;line-height:26px;text-align:center}
   .leaflet-container{background:#222}
+  .linhaalvo{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--borda)}
+  .linhaalvo .nome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .linhaalvo .dd{font-weight:700;min-width:64px;text-align:right}
+  .chip.star.on{background:var(--pri2);color:#fff}
+  .caixa{border:1px solid var(--borda);border-radius:10px;padding:10px;margin:8px 0}
 </style>
 </head>
 <body>
@@ -106,16 +112,20 @@
         <div id="sheet-corpo">
           <!-- Modo alvo -->
           <div id="p-alvo">
-            <div class="linha">
-              <span class="pequeno">Toque no mapa para marcar:</span>
-            </div>
+            <div class="pequeno">Toque no mapa para marcar:</div>
             <div class="linha">
               <button class="chip" data-pt="frente">Frente</button>
               <button class="chip sel" data-pt="centro">Centro</button>
               <button class="chip" data-pt="fundo">Fundo</button>
+              <button class="chip" id="btn-novo-ponto">+ Ponto</button>
               <button class="chip" id="limpar-alvo">Limpar</button>
             </div>
-            <div id="dist-alvo" class="pequeno">Nenhum alvo marcado.</div>
+            <div id="form-ponto" class="caixa" style="display:none">
+              <div class="linha"><select id="ponto-tipo"></select></div>
+              <div class="linha"><input type="text" id="ponto-nome" placeholder="Nome (opcional)" maxlength="30"></div>
+              <div class="pequeno">Agora toque no mapa para marcar o ponto (bunker, água, lay-up…). Pode marcar vários.</div>
+            </div>
+            <div id="dist-alvo"></div>
           </div>
           <!-- Modo tacada -->
           <div id="p-tacada" style="display:none">
@@ -123,13 +133,19 @@
               <button class="btn cheio" id="btn-saida">Marcar saída</button>
               <button class="btn cheio" id="btn-chegada" disabled>Marcar chegada</button>
             </div>
+            <div class="linha">
+              <button class="btn" id="btn-cancelar" disabled style="flex:1">Cancelar</button>
+              <button class="btn" id="btn-encerrar" disabled style="flex:1">Encerrar sequência</button>
+            </div>
             <div id="res-tacada" class="pequeno"></div>
             <div id="salvar-tacada" style="display:none">
               <div class="linha"><select id="sel-taco"></select></div>
               <div class="linha">
-                <button class="btn cheio" id="btn-salvar">Salvar tacada</button>
-                <button class="btn perigo" id="btn-descartar">Descartar</button>
+                <label class="pequeno" for="qtd-tacadas">Tacadas nesta medição</label>
+                <select id="qtd-tacadas"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
               </div>
+              <div class="pequeno" id="aviso-multi" style="display:none">Esta medição entra no histórico, mas fica fora das médias por taco.</div>
+              <div class="linha"><button class="btn cheio" id="btn-salvar">Salvar tacada</button></div>
             </div>
           </div>
         </div>
@@ -142,7 +158,10 @@
       <div id="hist-medias"></div>
       <h3>Tacadas</h3>
       <div id="hist-lista"></div>
-      <p><button class="btn perigo" id="limpar-hist">Apagar histórico</button></p>
+      <div class="linha">
+        <button class="btn" id="hist-csv">Exportar CSV</button>
+        <button class="btn perigo" id="limpar-hist">Apagar histórico</button>
+      </div>
     </div></section>
 
     <!-- AJUSTES -->
@@ -156,6 +175,30 @@
       <textarea id="cfg-tacos" rows="4"></textarea>
       <p><button class="btn cheio" id="cfg-salvar" style="width:100%">Salvar ajustes</button></p>
       <p class="pequeno" id="cfg-msg"></p>
+
+      <h3>Dados e backup</h3>
+      <div class="pequeno">Seus dados ficam só neste aparelho. Faça backup de vez em quando e guarde o arquivo (WhatsApp, e-mail, Drive).</div>
+      <div class="linha">
+        <button class="btn" id="bk-compartilhar">Backup: compartilhar</button>
+        <button class="btn" id="bk-baixar">Backup: baixar</button>
+      </div>
+      <div class="linha">
+        <button class="btn" id="csv-compartilhar">CSV: compartilhar</button>
+        <button class="btn" id="csv-baixar">CSV: baixar</button>
+      </div>
+      <div class="linha"><button class="btn" id="bk-restaurar">Restaurar backup…</button></div>
+      <input type="file" id="bk-arquivo" accept=".json,application/json" style="display:none">
+      <div id="restaura-box" class="caixa" style="display:none">
+        <div id="restaura-resumo"></div>
+        <div class="linha">
+          <button class="btn cheio" id="rest-subst">Substituir tudo</button>
+          <button class="btn cheio" id="rest-somar">Somar ao atual</button>
+          <button class="btn" id="rest-cancelar">Cancelar</button>
+        </div>
+      </div>
+      <p class="pequeno" id="bk-msg"></p>
+      <p class="pequeno" id="bk-ultimo"></p>
+      <p class="pequeno" id="bk-persist"></p>
     </div></section>
 
     <!-- SOBRE -->
@@ -173,21 +216,27 @@
 <script>
 (function(){
 'use strict';
-var VERSAO = '0.2.0 (protótipo)';
+var VERSAO = '0.3.0 (protótipo)';
 var NOME_APP = 'Nome do app: PENDENTE';
 var COPYRIGHT = '© 2026 Felippe Alvarez';
 var LIMITE_AVISO_M = 10;      // aviso se precisão pior que isso
 var TEMPO_MEDIA_MS = 8000;    // tempo de média por marcação
+var SCHEMA_BACKUP = 1;
+var MAX_LIVRES = 8;
 
 // ---------- armazenamento (com try/catch) ----------
 function ler(k, padrao){ try{ var v = localStorage.getItem(k); return v ? JSON.parse(v) : padrao; }catch(e){ return padrao; } }
 function gravar(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } }
+function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+var $ = function(id){ return document.getElementById(id); };
 
+var TACOS_PADRAO = ['Driver','Madeira 3','Híbrido','Ferro 4','Ferro 5','Ferro 6','Ferro 7','Ferro 8','Ferro 9','Pitching','Sand','Lob','Putter'];
 var cfg = ler('cfg', {});
-if(!cfg.unidade) cfg.unidade = 'yd';
-if(!cfg.tema) cfg.tema = 'auto';
-if(!cfg.tacos || !cfg.tacos.length) cfg.tacos = ['Driver','Madeira 3','Híbrido','Ferro 4','Ferro 5','Ferro 6','Ferro 7','Ferro 8','Ferro 9','Pitching','Sand','Lob','Putter'];
+if(cfg.unidade !== 'm') cfg.unidade = 'yd';
+if(['auto','claro','escuro'].indexOf(cfg.tema) < 0) cfg.tema = 'auto';
+if(!Array.isArray(cfg.tacos) || !cfg.tacos.length) cfg.tacos = TACOS_PADRAO.slice();
 var hist = ler('hist', []);
+if(!Array.isArray(hist)) hist = [];
 
 function aplicaTema(){
   var r = document.documentElement;
@@ -196,7 +245,7 @@ function aplicaTema(){
 }
 aplicaTema();
 
-// ---------- distância (elipsoide WGS84, aproximação local; erro de mm até alguns km) ----------
+// ---------- distância (elipsoide WGS84, aproximação local) ----------
 function dist(a,b){
   var rad = Math.PI/180, lat = (a.lat+b.lat)/2*rad;
   var A = 6378137, e2 = 0.00669437999014, s = Math.sin(lat), w = Math.sqrt(1 - e2*s*s);
@@ -217,8 +266,7 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/
 }).addTo(map);
 
 var pos = null, marcaPos = null, circPos = null, primeiroFix = true, seguir = true;
-
-var btnSeguir = document.getElementById('btn-seguir');
+var btnSeguir = $('btn-seguir');
 function marcaSeguir(){ btnSeguir.classList.toggle('on', seguir); }
 btnSeguir.addEventListener('click', function(){
   seguir = true; marcaSeguir();
@@ -239,16 +287,16 @@ function onPos(p){
   if(primeiroFix){ map.setView([pos.lat,pos.lng], 18); primeiroFix = false; }
   else if(seguir){ map.panTo([pos.lat,pos.lng], {animate:true, duration:.5}); }
   atualizaGpsStatus();
-  atualizaAlvo();
+  atualizaDistAlvo();
   atualizaHud();
   amostrar(pos);
 }
 function onErro(e){
   var msg = {1:'Permissão de localização negada.',2:'Posição indisponível.',3:'Tempo esgotado para obter GPS.'}[e.code] || 'Erro de GPS.';
-  var st = document.getElementById('hud-gps'); st.textContent = msg; st.className = 'aviso';
+  var st = $('hud-gps'); st.textContent = msg; st.className = 'aviso';
 }
 function atualizaGpsStatus(){
-  var st = document.getElementById('hud-gps');
+  var st = $('hud-gps');
   if(!pos){ return; }
   st.textContent = 'GPS ' + fmtPrec(pos.acc) + (pos.acc > LIMITE_AVISO_M ? ' — precisão baixa' : '');
   st.className = pos.acc > LIMITE_AVISO_M ? 'aviso' : '';
@@ -256,105 +304,186 @@ function atualizaGpsStatus(){
 function iniciaGps(){
   if(watchId !== null) return;
   if(!('geolocation' in navigator)){
-    var st0 = document.getElementById('hud-gps'); st0.textContent = 'Este aparelho/navegador não oferece geolocalização.'; st0.className = 'aviso'; return;
+    var st0 = $('hud-gps'); st0.textContent = 'Este aparelho/navegador não oferece geolocalização.'; st0.className = 'aviso'; return;
   }
-  var st = document.getElementById('hud-gps'); st.textContent = 'Buscando GPS…'; st.className = '';
+  var st = $('hud-gps'); st.textContent = 'Buscando GPS…'; st.className = '';
   watchId = navigator.geolocation.watchPosition(onPos, onErro, {enableHighAccuracy:true, maximumAge:0, timeout:20000});
 }
 function paraGps(){
   if(watchId !== null){ navigator.geolocation.clearWatch(watchId); watchId = null; }
   pos = null;
   cancelaAmostragem();
-  var st = document.getElementById('hud-gps'); st.textContent = 'GPS pausado (economiza bateria)'; st.className = '';
-  atualizaAlvo(); atualizaHud();
+  var st = $('hud-gps'); st.textContent = 'GPS pausado (economiza bateria)'; st.className = '';
+  atualizaDistAlvo(); atualizaHud();
 }
 function sincronizaGps(){
   if(telaAtual === 'tela-mapa' && !document.hidden) iniciaGps(); else paraGps();
 }
 document.addEventListener('visibilitychange', sincronizaGps);
 
-// ---------- modo alvo ----------
-var alvos = {frente:null, centro:null, fundo:null}, marcasAlvo = {}, tipoAlvo = 'centro';
+// ---------- alvos: frente/centro/fundo + pontos livres ----------
+var TIPOS = [
+  {id:'bunker', rot:'Bunker', em:'🏖️'}, {id:'agua', rot:'Água', em:'💧'}, {id:'layup', rot:'Lay-up', em:'🎯'},
+  {id:'queda', rot:'Área de queda', em:'🔸'}, {id:'arvore', rot:'Árvore', em:'🌳'}, {id:'outro', rot:'Outro', em:'📍'}
+];
+function tipoDe(id){ for(var i=0;i<TIPOS.length;i++){ if(TIPOS[i].id===id) return TIPOS[i]; } return TIPOS[TIPOS.length-1]; }
+(function(){ var s = $('ponto-tipo'); TIPOS.forEach(function(t){ var o = document.createElement('option'); o.value = t.id; o.textContent = t.em+' '+t.rot; s.appendChild(o); }); })();
+
+var alvos = {frente:null, centro:null, fundo:null}, marcasAlvo = {};
+var livres = [], livreSeq = 0;
 var rotulo = {frente:'Frente', centro:'Centro', fundo:'Fundo'};
+var tipoAlvo = 'centro';      // 'frente' | 'centro' | 'fundo' | 'livre'
+var principalSel = null;      // chave escolhida para o número grande (null = automático)
+
+function listaAlvos(){
+  var r = [];
+  ['frente','centro','fundo'].forEach(function(k){
+    if(alvos[k]) r.push({key:k, label:rotulo[k], em:(k==='centro'?'🚩':'📍'), p:alvos[k], livre:false});
+  });
+  livres.forEach(function(l){
+    r.push({key:'L'+l.id, label:(l.nome || tipoDe(l.tipo).rot), em:tipoDe(l.tipo).em, p:l, livre:true, id:l.id});
+  });
+  return r;
+}
+function principalKey(){
+  var L = listaAlvos(); if(!L.length) return null;
+  if(principalSel){ for(var i=0;i<L.length;i++){ if(L[i].key===principalSel) return principalSel; } }
+  var ordem = ['centro','frente','fundo'];
+  for(var j=0;j<ordem.length;j++){ if(alvos[ordem[j]]) return ordem[j]; }
+  return L[0].key;
+}
+function emojiIcon(em){ return L.divIcon({className:'', html:'<div class="bandeira">'+em+'</div>', iconSize:[28,28], iconAnchor:[14,26]}); }
+
 document.querySelectorAll('#p-alvo [data-pt]').forEach(function(b){
   b.addEventListener('click', function(){
     tipoAlvo = b.dataset.pt;
+    $('form-ponto').style.display = 'none';
+    $('btn-novo-ponto').classList.remove('sel');
     document.querySelectorAll('#p-alvo [data-pt]').forEach(function(x){ x.classList.toggle('sel', x===b); });
   });
 });
+$('btn-novo-ponto').addEventListener('click', function(){
+  tipoAlvo = 'livre';
+  $('form-ponto').style.display = '';
+  this.classList.add('sel');
+  document.querySelectorAll('#p-alvo [data-pt]').forEach(function(x){ x.classList.remove('sel'); });
+});
 map.on('click', function(ev){
   if(modo!=='alvo') return;
-  alvos[tipoAlvo] = {lat:ev.latlng.lat, lng:ev.latlng.lng};
-  if(marcasAlvo[tipoAlvo]) marcasAlvo[tipoAlvo].setLatLng(ev.latlng);
-  else marcasAlvo[tipoAlvo] = L.marker(ev.latlng, {icon:L.divIcon({className:'', html:'<div class="bandeira">'+(tipoAlvo==='centro'?'🚩':'📍')+'</div>', iconSize:[28,28], iconAnchor:[14,26]})}).addTo(map);
-  atualizaAlvo(); atualizaHud();
+  var ll = {lat:ev.latlng.lat, lng:ev.latlng.lng};
+  if(tipoAlvo === 'livre'){
+    if(livres.length >= MAX_LIVRES){ alert('Limite de '+MAX_LIVRES+' pontos livres. Apague algum para marcar outro.'); return; }
+    var tp = tipoDe($('ponto-tipo').value);
+    var nome = $('ponto-nome').value.trim().slice(0,30);
+    var l = {id:++livreSeq, tipo:tp.id, nome:nome, lat:ll.lat, lng:ll.lng};
+    l.marker = L.marker([ll.lat,ll.lng], {icon:emojiIcon(tp.em)}).addTo(map);
+    livres.push(l);
+    $('ponto-nome').value = '';
+  } else {
+    alvos[tipoAlvo] = ll;
+    if(marcasAlvo[tipoAlvo]) marcasAlvo[tipoAlvo].setLatLng(ev.latlng);
+    else marcasAlvo[tipoAlvo] = L.marker(ev.latlng, {icon:emojiIcon(tipoAlvo==='centro'?'🚩':'📍')}).addTo(map);
+  }
+  renderAlvos(); atualizaHud();
 });
-document.getElementById('limpar-alvo').addEventListener('click', function(){
+$('limpar-alvo').addEventListener('click', function(){
   Object.keys(marcasAlvo).forEach(function(k){ map.removeLayer(marcasAlvo[k]); });
-  marcasAlvo = {}; alvos = {frente:null, centro:null, fundo:null}; atualizaAlvo(); atualizaHud();
+  livres.forEach(function(l){ if(l.marker) map.removeLayer(l.marker); });
+  marcasAlvo = {}; alvos = {frente:null, centro:null, fundo:null}; livres = []; principalSel = null;
+  renderAlvos(); atualizaHud();
 });
-function atualizaAlvo(){
-  var el = document.getElementById('dist-alvo');
-  var partes = [];
-  ['frente','centro','fundo'].forEach(function(k){
-    if(alvos[k]){
-      partes.push(pos ? '<b>'+rotulo[k]+':</b> '+fmt(dist(pos,alvos[k])) : rotulo[k]+': aguardando GPS');
-    }
+// lista de alvos (reconstruída só quando a estrutura muda; distâncias são atualizadas no lugar)
+function renderAlvos(){
+  var el = $('dist-alvo'), L_ = listaAlvos(), pk = principalKey();
+  if(!L_.length){ el.innerHTML = '<div class="pequeno">Nenhum alvo marcado.</div>'; return; }
+  var h = '';
+  L_.forEach(function(a){
+    h += '<div class="linhaalvo"><span class="nome">'+a.em+' <b>'+esc(a.label)+'</b></span>' +
+         '<span class="dd" data-dist="'+a.key+'">—</span>' +
+         '<button class="chip peq star'+(a.key===pk?' on':'')+'" data-prin="'+a.key+'" aria-label="Usar como principal">★</button>' +
+         '<button class="chip peq" data-del="'+a.key+'" aria-label="Remover">✕</button></div>';
   });
-  if(!partes.length){ el.textContent = 'Nenhum alvo marcado.'; return; }
-  el.innerHTML = partes.join(' &nbsp;·&nbsp; ') + '<div class="pequeno">Linha reta horizontal: sem desnível nem vento.</div>';
+  h += '<div class="pequeno">★ escolhe qual alvo aparece no número grande. Linha reta horizontal: sem desnível nem vento.</div>';
+  el.innerHTML = h;
+  atualizaDistAlvo();
 }
+function atualizaDistAlvo(){
+  listaAlvos().forEach(function(a){
+    var s = document.querySelector('#dist-alvo [data-dist="'+a.key+'"]');
+    if(s) s.textContent = pos ? fmt(dist(pos, a.p)) : '—';
+  });
+}
+$('dist-alvo').addEventListener('click', function(ev){
+  var b = ev.target.closest('button'); if(!b) return;
+  if(b.dataset.prin){ principalSel = b.dataset.prin; renderAlvos(); atualizaHud(); return; }
+  if(b.dataset.del){
+    var k = b.dataset.del;
+    if(k.charAt(0)==='L'){
+      var id = +k.slice(1);
+      livres = livres.filter(function(l){ if(l.id===id){ if(l.marker) map.removeLayer(l.marker); return false; } return true; });
+    } else {
+      alvos[k] = null; if(marcasAlvo[k]){ map.removeLayer(marcasAlvo[k]); delete marcasAlvo[k]; }
+    }
+    if(principalSel === k) principalSel = null;
+    renderAlvos(); atualizaHud();
+  }
+});
 
 // ---------- HUD ----------
 function setHud(rot, num, sub){
-  document.getElementById('hud-rot').textContent = rot;
-  document.getElementById('hud-num').textContent = num;
-  document.getElementById('hud-un').textContent = num === '—' ? '' : un();
-  document.getElementById('hud-sub').textContent = sub || '';
+  $('hud-rot').textContent = rot;
+  $('hud-num').textContent = num;
+  $('hud-un').textContent = num === '—' ? '' : un();
+  $('hud-sub').textContent = sub || '';
 }
 function atualizaHud(){
   if(modo === 'alvo'){
-    var principal = alvos.centro ? 'centro' : (alvos.frente ? 'frente' : (alvos.fundo ? 'fundo' : null));
-    if(!principal){ setHud('Distância até o alvo', '—', 'Toque no mapa para marcar o alvo'); return; }
-    if(!pos){ setHud('Até ' + rotulo[principal].toLowerCase() + ' do green', '—', 'Aguardando GPS…'); return; }
+    var pk = principalKey();
+    if(!pk){ setHud('Distância até o alvo', '—', 'Toque no mapa para marcar o alvo'); return; }
+    var L_ = listaAlvos(), prin = null;
+    L_.forEach(function(a){ if(a.key===pk) prin = a; });
+    var rot = prin.livre ? 'Até ' + prin.label : 'Até ' + prin.label.toLowerCase() + ' do green';
+    if(!pos){ setHud(rot, '—', 'Aguardando GPS…'); return; }
     var outros = [];
-    ['frente','centro','fundo'].forEach(function(k){
-      if(k !== principal && alvos[k]) outros.push(rotulo[k] + ' ' + numU(dist(pos, alvos[k])));
-    });
-    setHud('Até ' + rotulo[principal].toLowerCase() + ' do green', String(numU(dist(pos, alvos[principal]))), outros.join('  ·  '));
+    L_.forEach(function(a){ if(a.key!==pk && outros.length<3) outros.push(a.label + ' ' + numU(dist(pos, a.p))); });
+    setHud(rot, String(numU(dist(pos, prin.p))), outros.join('  ·  '));
   } else {
     if(saida && chegada){
       setHud('Tacada medida', String(numU(dist(saida, chegada))), 'Escolha o taco e salve');
     } else if(saida){
       if(!pos){ setHud('Desde a saída', '—', 'Aguardando GPS…'); return; }
-      setHud('Desde a saída (ao vivo)', String(numU(dist(saida, pos))), 'Chegue na bola e toque em “Marcar chegada”');
+      setHud('Desde a saída (ao vivo)', String(numU(dist(saida, pos))), 'Na bola, toque em “Marcar chegada”');
     } else {
-      setHud('Distância da tacada', '—', 'Marque a saída ao lado da bola');
+      setHud('Distância da tacada', '—', 'Marcar é opcional: você pode só jogar');
     }
   }
 }
 
 // ---------- painel recolhível e modos ----------
 var modo = 'alvo';
-var sheet = document.getElementById('sheet');
-document.getElementById('btn-recolher').addEventListener('click', function(){
+var sheet = $('sheet');
+$('btn-recolher').addEventListener('click', function(){
   var fechado = sheet.classList.toggle('fechado');
   this.textContent = fechado ? '▴' : '▾';
 });
 function setModo(m){
   modo = m;
-  document.getElementById('modo-alvo').classList.toggle('sel', m==='alvo');
-  document.getElementById('modo-tacada').classList.toggle('sel', m==='tacada');
-  document.getElementById('p-alvo').style.display = m==='alvo' ? '' : 'none';
-  document.getElementById('p-tacada').style.display = m==='tacada' ? '' : 'none';
+  $('modo-alvo').classList.toggle('sel', m==='alvo');
+  $('modo-tacada').classList.toggle('sel', m==='tacada');
+  $('p-alvo').style.display = m==='alvo' ? '' : 'none';
+  $('p-tacada').style.display = m==='tacada' ? '' : 'none';
   atualizaHud();
 }
-document.getElementById('modo-alvo').addEventListener('click', function(){ setModo('alvo'); });
-document.getElementById('modo-tacada').addEventListener('click', function(){ setModo('tacada'); });
+$('modo-alvo').addEventListener('click', function(){ setModo('alvo'); });
+$('modo-tacada').addEventListener('click', function(){ setModo('tacada'); });
 
-// ---------- modo tacada ----------
-var amostras = null, amostrando = null, saida = ler('saida', null), chegada = null, linhaTacada = null, marcasT = [];
-var TXT_INICIAL = 'Fique ao lado da bola e toque em “Marcar saída”. Dê a tacada, caminhe até a bola e toque em “Marcar chegada”.';
+// ---------- modo tacada (marcação opcional, cancelável, encadeada) ----------
+var amostras = null, amostrando = null, medindoRot = '';
+var saida = ler('saida', null), chegada = null, linhaTacada = null, marcasT = [];
+var seq = ler('seq', null);
+if(!seq || typeof seq.n !== 'number') seq = {id:Date.now(), n:0};
+var TXT_INICIAL = 'Marcar a distância é opcional. Para medir: fique ao lado da bola e toque em “Marcar saída”; dê a tacada, vá até a bola e toque em “Marcar chegada”.';
+
 function amostrar(p){ if(amostras) amostras.push({lat:p.lat, lng:p.lng, acc:p.acc}); }
 function mediaPonderada(a){
   var sw=0, slat=0, slng=0;
@@ -362,40 +491,52 @@ function mediaPonderada(a){
   var accs = a.map(function(s){ return s.acc; }).sort(function(x,y){ return x-y; });
   return {lat:slat/sw, lng:slng/sw, acc:accs[Math.floor(accs.length/2)], n:a.length};
 }
-function restauraBotoesTacada(){
-  document.getElementById('btn-saida').disabled = false;
-  document.getElementById('btn-chegada').disabled = !saida;
-  var res = document.getElementById('res-tacada');
+function atualizaBotoesTacada(){
+  var medindo = amostrando !== null;
+  $('btn-saida').disabled = medindo;
+  $('btn-saida').textContent = saida ? 'Refazer saída' : 'Marcar saída';
+  $('btn-chegada').disabled = medindo || !saida;
+  var bc = $('btn-cancelar');
+  bc.disabled = !(medindo || saida || chegada);
+  bc.textContent = medindo ? 'Cancelar medição' : 'Não medir esta tacada';
+  $('btn-encerrar').disabled = medindo || !(seq.n > 0 || saida || chegada);
+  var res = $('res-tacada');
+  if(medindo) return;
   if(chegada){
     var d = dist(saida, chegada), err = Math.hypot(saida.acc, chegada.acc);
     res.innerHTML = '<span class="grande">'+fmt(d)+'</span> <span class="pequeno">(incerteza estimada ≈ '+fmtPrec(err)+')</span>' +
       (err > LIMITE_AVISO_M ? '<div class="aviso">Precisão baixa nesta medição; trate o valor como estimativa.</div>' : '');
   } else if(saida){
-    res.textContent = 'Saída marcada ('+fmtPrec(saida.acc)+'). Dê a tacada, vá até a bola e toque em “Marcar chegada”.';
+    res.textContent = saida.enc
+      ? 'Saída = posição da última chegada (tacada '+seq.n+' da sequência). Dê a tacada e toque em “Marcar chegada” na bola. Se a bola mudou de lugar, use “Refazer saída”.'
+      : 'Saída marcada ('+fmtPrec(saida.acc)+'). Dê a tacada, vá até a bola e toque em “Marcar chegada”.';
   } else {
     res.textContent = TXT_INICIAL;
   }
 }
 function cancelaAmostragem(){
+  var tinha = (amostrando !== null) || (amostras !== null);
   if(amostrando){ clearInterval(amostrando); amostrando = null; }
-  if(amostras){ amostras = null; restauraBotoesTacada(); }
+  amostras = null;
+  if(tinha) atualizaBotoesTacada();
 }
 function marcarPonto(rotuloPonto, aoFim){
   if(!pos){ alert('Sem posição de GPS ainda. Aguarde o sinal.'); return; }
-  var bs = document.getElementById('btn-saida'), bc = document.getElementById('btn-chegada');
-  bs.disabled = bc.disabled = true;
   amostras = [{lat:pos.lat, lng:pos.lng, acc:pos.acc}];
-  var t0 = Date.now(), res = document.getElementById('res-tacada');
+  medindoRot = rotuloPonto;
+  var t0 = Date.now(), res = $('res-tacada');
   amostrando = setInterval(function(){
     var rest = Math.max(0, Math.ceil((TEMPO_MEDIA_MS-(Date.now()-t0))/1000));
     res.textContent = 'Medindo '+rotuloPonto+'… fique parado ('+rest+' s)';
     if(Date.now()-t0 >= TEMPO_MEDIA_MS){
       clearInterval(amostrando); amostrando = null;
-      if(!amostras){ return; }
+      if(!amostras){ atualizaBotoesTacada(); return; }
       var m = mediaPonderada(amostras); amostras = null;
       aoFim(m);
     }
   }, 500);
+  atualizaBotoesTacada();
+  res.textContent = 'Medindo '+rotuloPonto+'… fique parado ('+Math.ceil(TEMPO_MEDIA_MS/1000)+' s)';
 }
 function desenhaTacada(){
   marcasT.forEach(function(x){ map.removeLayer(x); }); marcasT = [];
@@ -405,93 +546,261 @@ function desenhaTacada(){
   });
   if(saida && chegada) linhaTacada = L.polyline([[saida.lat,saida.lng],[chegada.lat,chegada.lng]], {color:'#fff', weight:3, dashArray:'6 6'}).addTo(map);
 }
-document.getElementById('btn-saida').addEventListener('click', function(){
-  chegada = null; document.getElementById('salvar-tacada').style.display = 'none';
-  marcarPonto('saída', function(m){
-    saida = m; gravar('saida', saida); desenhaTacada(); restauraBotoesTacada(); atualizaHud();
-  });
-});
-document.getElementById('btn-chegada').addEventListener('click', function(){
-  marcarPonto('chegada', function(m){
-    chegada = m; desenhaTacada(); restauraBotoesTacada(); atualizaHud();
-    document.getElementById('salvar-tacada').style.display = '';
-  });
-});
-document.getElementById('btn-salvar').addEventListener('click', function(){
-  if(!saida || !chegada) return;
-  hist.unshift({t:Date.now(), taco:document.getElementById('sel-taco').value, m:dist(saida,chegada), acc:Math.hypot(saida.acc,chegada.acc)});
-  if(!gravar('hist', hist)) alert('Não foi possível gravar no armazenamento do navegador.');
-  limpaTacada(); renderHist();
-});
-document.getElementById('btn-descartar').addEventListener('click', limpaTacada);
-function limpaTacada(){
-  saida = null; chegada = null; gravar('saida', null); desenhaTacada();
-  document.getElementById('salvar-tacada').style.display = 'none';
-  restauraBotoesTacada(); atualizaHud();
+function mostraSalvar(sim){
+  $('salvar-tacada').style.display = sim ? '' : 'none';
+  if(sim){ $('qtd-tacadas').value = '1'; $('aviso-multi').style.display = 'none'; }
 }
+$('qtd-tacadas').addEventListener('change', function(){ $('aviso-multi').style.display = (parseInt(this.value,10) > 1) ? '' : 'none'; });
+
+$('btn-saida').addEventListener('click', function(){
+  marcarPonto('saída', function(m){
+    saida = m; chegada = null; gravar('saida', saida);
+    mostraSalvar(false); desenhaTacada(); atualizaBotoesTacada(); atualizaHud();
+  });
+});
+$('btn-chegada').addEventListener('click', function(){
+  marcarPonto('chegada', function(m){
+    chegada = m; desenhaTacada(); mostraSalvar(true); atualizaBotoesTacada(); atualizaHud();
+  });
+});
+$('btn-cancelar').addEventListener('click', function(){
+  if(amostrando !== null){ cancelaAmostragem(); return; }       // cancela só a medição em andamento
+  saida = null; chegada = null; gravar('saida', null);          // "não medir": nada é registrado
+  mostraSalvar(false); desenhaTacada(); atualizaBotoesTacada(); atualizaHud();
+});
+$('btn-encerrar').addEventListener('click', function(){
+  seq = {id:Date.now(), n:0}; gravar('seq', seq);
+  saida = null; chegada = null; gravar('saida', null);
+  mostraSalvar(false); desenhaTacada(); atualizaBotoesTacada(); atualizaHud();
+});
+$('btn-salvar').addEventListener('click', function(){
+  if(!saida || !chegada) return;
+  var k = parseInt($('qtd-tacadas').value, 10); if(!(k >= 1 && k <= 9)) k = 1;
+  var n = seq.n + k;
+  hist.unshift({t:Date.now(), taco:$('sel-taco').value, m:dist(saida,chegada), acc:Math.hypot(saida.acc,chegada.acc), k:k, seq:seq.id, n:n});
+  if(!gravar('hist', hist)) alert('Não foi possível gravar no armazenamento do navegador.');
+  seq.n = n; gravar('seq', seq);
+  saida = {lat:chegada.lat, lng:chegada.lng, acc:chegada.acc, enc:true}; chegada = null; gravar('saida', saida);
+  mostraSalvar(false); desenhaTacada(); atualizaBotoesTacada(); atualizaHud(); renderHist();
+});
 
 // ---------- tacos / ajustes ----------
-function renderTacos(){
-  var s = document.getElementById('sel-taco'); s.innerHTML = '';
-  cfg.tacos.forEach(function(t){ var o = document.createElement('option'); o.textContent = t; s.appendChild(o); });
-  document.getElementById('cfg-tacos').value = cfg.tacos.join(', ');
-  document.getElementById('cfg-unidade').value = cfg.unidade;
-  document.getElementById('cfg-tema').value = cfg.tema;
+function opcoesTacos(sel){
+  return cfg.tacos.map(function(t){ return '<option'+(t===sel?' selected':'')+'>'+esc(t)+'</option>'; }).join('');
 }
-document.getElementById('cfg-salvar').addEventListener('click', function(){
-  cfg.unidade = document.getElementById('cfg-unidade').value;
-  cfg.tema = document.getElementById('cfg-tema').value;
-  var l = document.getElementById('cfg-tacos').value.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+function renderTacos(){
+  $('sel-taco').innerHTML = opcoesTacos();
+  $('cfg-tacos').value = cfg.tacos.join(', ');
+  $('cfg-unidade').value = cfg.unidade;
+  $('cfg-tema').value = cfg.tema;
+}
+$('cfg-salvar').addEventListener('click', function(){
+  cfg.unidade = $('cfg-unidade').value === 'm' ? 'm' : 'yd';
+  cfg.tema = $('cfg-tema').value;
+  var l = $('cfg-tacos').value.split(',').map(function(x){ return x.trim().slice(0,40); }).filter(Boolean).slice(0,40);
   if(l.length) cfg.tacos = l;
-  gravar('cfg', cfg); aplicaTema(); renderTacos(); renderHist(); atualizaAlvo(); atualizaGpsStatus(); restauraBotoesTacada(); atualizaHud();
-  document.getElementById('cfg-msg').textContent = 'Ajustes salvos.';
+  gravar('cfg', cfg); aplicaTema(); renderTacos(); renderHist(); renderAlvos(); atualizaGpsStatus(); atualizaBotoesTacada(); atualizaHud();
+  $('cfg-msg').textContent = 'Ajustes salvos.';
 });
 
-// ---------- histórico ----------
-function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+// ---------- histórico (com edição) ----------
+var editandoT = null;
 function renderHist(){
   var med = {}, i;
-  hist.forEach(function(h){ (med[h.taco] = med[h.taco] || []).push(h.m); });
+  hist.forEach(function(h){ if((h.k||1) === 1) (med[h.taco] = med[h.taco] || []).push(h.m); });
   var tm = '<h3>Médias por taco</h3>';
   var ks = Object.keys(med);
-  if(!ks.length) tm += '<p class="pequeno">Sem tacadas salvas.</p>';
+  if(!ks.length) tm += '<p class="pequeno">Sem tacadas de 1 tacada salvas.</p>';
   else {
     tm += '<table><tr><th>Taco</th><th>Qtd</th><th>Média</th><th>Maior</th></tr>';
     ks.forEach(function(k){
       var a = med[k], soma = a.reduce(function(x,y){ return x+y; }, 0);
       tm += '<tr><td>'+esc(k)+'</td><td>'+a.length+'</td><td>'+fmt(soma/a.length)+'</td><td>'+fmt(Math.max.apply(null,a))+'</td></tr>';
     });
-    tm += '</table>';
+    tm += '</table><p class="pequeno">Medições que cobrem mais de uma tacada ficam fora das médias.</p>';
   }
-  document.getElementById('hist-medias').innerHTML = tm;
-  var tl = '<table><tr><th>Data</th><th>Taco</th><th>Dist.</th></tr>';
+  $('hist-medias').innerHTML = tm;
+  var tl = '<table><tr><th>Data</th><th>Taco</th><th>Dist.</th><th></th></tr>';
   for(i=0;i<hist.length;i++){
-    var h = hist[i];
-    tl += '<tr><td>'+new Date(h.t).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+'</td><td>'+esc(h.taco)+'</td><td>'+fmt(h.m)+'</td></tr>';
+    var h = hist[i], k = h.k || 1;
+    tl += '<tr><td>'+new Date(h.t).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+'</td><td>'+esc(h.taco)+'</td><td>'+fmt(h.m)+(k>1?' <span class="pequeno">(×'+k+')</span>':'')+'</td>' +
+      '<td><button class="chip peq" data-ed="'+h.t+'">Editar</button></td></tr>';
+    if(editandoT === h.t){
+      tl += '<tr><td colspan="4"><div class="linha"><select id="ed-taco">'+opcoesTacos(h.taco)+'</select>' +
+        '<select id="ed-k">'+[1,2,3,4,5].map(function(n){ return '<option value="'+n+'"'+(n===k?' selected':'')+'>'+n+' tacada'+(n>1?'s':'')+'</option>'; }).join('')+'</select></div>' +
+        '<div class="linha"><button class="btn cheio" data-salva="'+h.t+'">Salvar</button>' +
+        '<button class="btn perigo" data-apaga="'+h.t+'">Apagar</button><button class="btn" data-fecha="1">Fechar</button></div></td></tr>';
+    }
   }
-  document.getElementById('hist-lista').innerHTML = hist.length ? tl+'</table>' : '';
+  $('hist-lista').innerHTML = hist.length ? tl+'</table>' : '<p class="pequeno">Nenhuma tacada salva.</p>';
 }
-document.getElementById('limpar-hist').addEventListener('click', function(){
-  if(confirm('Apagar todo o histórico de tacadas?')){ hist = []; gravar('hist', hist); renderHist(); }
+$('hist-lista').addEventListener('click', function(ev){
+  var b = ev.target.closest('button'); if(!b) return;
+  if(b.dataset.ed){ editandoT = (editandoT === +b.dataset.ed) ? null : +b.dataset.ed; renderHist(); return; }
+  if(b.dataset.fecha){ editandoT = null; renderHist(); return; }
+  if(b.dataset.salva){
+    var t = +b.dataset.salva;
+    hist.forEach(function(h){ if(h.t === t){ h.taco = $('ed-taco').value; h.k = parseInt($('ed-k').value,10) || 1; } });
+    gravar('hist', hist); editandoT = null; renderHist(); return;
+  }
+  if(b.dataset.apaga){
+    if(!confirm('Apagar esta tacada do histórico?')) return;
+    var t2 = +b.dataset.apaga;
+    hist = hist.filter(function(h){ return h.t !== t2; });
+    gravar('hist', hist); editandoT = null; renderHist();
+  }
+});
+$('limpar-hist').addEventListener('click', function(){
+  if(confirm('Apagar todo o histórico de tacadas? (Faça um backup antes, se quiser guardar.)')){ hist = []; gravar('hist', hist); editandoT = null; renderHist(); }
 });
 
+// ---------- exportar CSV / backup / restaurar ----------
+function p2(n){ return (n<10?'0':'')+n; }
+function stamp(d){ return d.getFullYear()+p2(d.getMonth()+1)+p2(d.getDate())+'-'+p2(d.getHours())+p2(d.getMinutes()); }
+function isoLocal(d){ return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())+' '+p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds()); }
+function csvEsc(s){ s = String(s); return /[;"\n\r]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }
+function dec(x, n){ return x.toFixed(n).replace('.', ','); }
+function gerarCsv(){
+  var u = un();
+  var linhas = [['data_hora','taco','distancia_'+u,'distancia_m','incerteza_m','tacadas_na_medicao','sequencia','n_na_sequencia'].join(';')];
+  hist.slice().reverse().forEach(function(h){
+    var dU = cfg.unidade==='yd' ? h.m/0.9144 : h.m;
+    linhas.push([isoLocal(new Date(h.t)), h.taco, dec(dU,1), dec(h.m,1), dec(h.acc||0,1), h.k||1, h.seq||'', h.n||''].map(csvEsc).join(';'));
+  });
+  return '﻿' + linhas.join('\r\n');   // BOM + ";" para abrir direto no Excel em português
+}
+function gerarBackup(){
+  return JSON.stringify({app:'golfe-distancia', schema:SCHEMA_BACKUP, versao:VERSAO, exportadoEm:new Date().toISOString(), cfg:cfg, hist:hist}, null, 1);
+}
+function baixa(blob, nome){
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nome;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ try{ URL.revokeObjectURL(a.href); }catch(e){} a.remove(); }, 1500);
+}
+function entrega(nome, texto, mime, tentarCompartilhar){
+  var blob = new Blob([texto], {type:mime});
+  var file = null; try{ file = new File([blob], nome, {type:mime}); }catch(e){}
+  if(tentarCompartilhar && file && navigator.canShare && navigator.share && navigator.canShare({files:[file]})){
+    return navigator.share({files:[file], title:nome}).then(function(){ return true; }).catch(function(err){
+      if(err && err.name === 'AbortError') return false;
+      baixa(blob, nome); return true;
+    });
+  }
+  baixa(blob, nome); return Promise.resolve(true);
+}
+function msgBk(t){ $('bk-msg').textContent = t; }
+function exportaCsv(comp){
+  if(!hist.length){ msgBk('Não há tacadas para exportar.'); return; }
+  entrega('golfe-tacadas-'+stamp(new Date())+'.csv', gerarCsv(), 'text/csv', comp).then(function(ok){ if(ok) msgBk('CSV pronto.'); });
+}
+function exportaBackup(comp){
+  entrega('golfe-backup-'+stamp(new Date())+'.json', gerarBackup(), 'application/json', comp).then(function(ok){
+    if(ok){ gravar('ultimoBackup', Date.now()); msgBk('Backup pronto. Guarde o arquivo em local seguro.'); mostraUltimoBackup(); }
+  });
+}
+function mostraUltimoBackup(){
+  var t = ler('ultimoBackup', null);
+  $('bk-ultimo').textContent = t ? 'Último backup: ' + new Date(t).toLocaleString('pt-BR') : 'Você ainda não fez backup neste aparelho.';
+}
+$('bk-compartilhar').addEventListener('click', function(){ exportaBackup(true); });
+$('bk-baixar').addEventListener('click', function(){ exportaBackup(false); });
+$('csv-compartilhar').addEventListener('click', function(){ exportaCsv(true); });
+$('csv-baixar').addEventListener('click', function(){ exportaCsv(false); });
+$('hist-csv').addEventListener('click', function(){ exportaCsv(true); });
+
+function validaBackup(obj){
+  if(!obj || typeof obj !== 'object' || obj.app !== 'golfe-distancia') return {erro:'Este arquivo não é um backup deste app.'};
+  if(typeof obj.schema !== 'number' || obj.schema > SCHEMA_BACKUP) return {erro:'Backup de uma versão mais nova do app. Atualize o app e tente de novo.'};
+  var h = [];
+  if(Array.isArray(obj.hist)){
+    obj.hist.slice(0, 20000).forEach(function(x){
+      if(x && isFinite(x.t) && isFinite(x.m) && +x.m >= 0 && +x.m < 5000 && typeof x.taco === 'string'){
+        h.push({t:+x.t, taco:x.taco.slice(0,40), m:+x.m, acc:isFinite(x.acc)?+x.acc:0, k:(x.k>=1&&x.k<=9)?Math.floor(x.k):1, seq:isFinite(x.seq)?+x.seq:0, n:isFinite(x.n)?+x.n:0});
+      }
+    });
+  }
+  var c = {};
+  if(obj.cfg && typeof obj.cfg === 'object'){
+    if(obj.cfg.unidade === 'yd' || obj.cfg.unidade === 'm') c.unidade = obj.cfg.unidade;
+    if(['auto','claro','escuro'].indexOf(obj.cfg.tema) >= 0) c.tema = obj.cfg.tema;
+    if(Array.isArray(obj.cfg.tacos)){
+      var tc = obj.cfg.tacos.filter(function(x){ return typeof x === 'string' && x.trim(); }).map(function(x){ return x.trim().slice(0,40); }).slice(0,40);
+      if(tc.length) c.tacos = tc;
+    }
+  }
+  return {hist:h, cfg:c};
+}
+var backupPendente = null;
+$('bk-restaurar').addEventListener('click', function(){ $('bk-arquivo').value = ''; $('bk-arquivo').click(); });
+$('bk-arquivo').addEventListener('change', function(){
+  var f = this.files && this.files[0]; if(!f) return;
+  if(f.size > 5*1024*1024){ msgBk('Arquivo grande demais para ser um backup deste app.'); return; }
+  var fr = new FileReader();
+  fr.onload = function(){
+    var obj; try{ obj = JSON.parse(String(fr.result)); }catch(e){ msgBk('Arquivo inválido (não é JSON).'); return; }
+    var v = validaBackup(obj);
+    if(v.erro){ msgBk(v.erro); return; }
+    backupPendente = v;
+    $('restaura-resumo').textContent = 'Backup válido: ' + v.hist.length + ' tacada(s)' + (obj.exportadoEm ? ', exportado em ' + new Date(obj.exportadoEm).toLocaleString('pt-BR') : '') + '. O que fazer?';
+    $('restaura-box').style.display = '';
+    msgBk('');
+  };
+  fr.onerror = function(){ msgBk('Não foi possível ler o arquivo.'); };
+  fr.readAsText(f);
+});
+function fimRestaura(txt){
+  backupPendente = null; $('restaura-box').style.display = 'none';
+  renderTacos(); aplicaTema(); renderHist(); renderAlvos(); atualizaBotoesTacada(); atualizaHud(); msgBk(txt);
+}
+$('rest-subst').addEventListener('click', function(){
+  if(!backupPendente) return;
+  if(!confirm('Substituir TODO o histórico e os ajustes atuais pelos do backup?')) return;
+  hist = backupPendente.hist.slice().sort(function(a,b){ return b.t - a.t; });
+  var c = backupPendente.cfg; Object.keys(c).forEach(function(k){ cfg[k] = c[k]; });
+  gravar('hist', hist); gravar('cfg', cfg);
+  fimRestaura('Backup restaurado (substituição).');
+});
+$('rest-somar').addEventListener('click', function(){
+  if(!backupPendente) return;
+  var vistos = {}; hist.forEach(function(h){ vistos[h.t+'|'+h.taco+'|'+Math.round(h.m*10)] = 1; });
+  var novos = 0;
+  backupPendente.hist.forEach(function(h){ var k = h.t+'|'+h.taco+'|'+Math.round(h.m*10); if(!vistos[k]){ vistos[k] = 1; hist.push(h); novos++; } });
+  hist.sort(function(a,b){ return b.t - a.t; });
+  gravar('hist', hist);
+  fimRestaura('Backup somado: ' + novos + ' tacada(s) nova(s) adicionada(s). Ajustes atuais mantidos.');
+});
+$('rest-cancelar').addEventListener('click', function(){ backupPendente = null; $('restaura-box').style.display = 'none'; });
+
+// proteção contra limpeza automática do armazenamento (não é garantia; o backup continua necessário)
+$('bk-persist').textContent = 'Proteção contra limpeza automática: indisponível neste navegador.';
+try{
+  if(navigator.storage && navigator.storage.persist){
+    navigator.storage.persist().then(function(ok){
+      $('bk-persist').textContent = 'Proteção contra limpeza automática: ' + (ok ? 'ativa (mesmo assim, faça backup).' : 'não concedida pelo navegador. Faça backup com frequência.');
+    }).catch(function(){});
+  }
+}catch(e){}
+
 // ---------- sobre ----------
-document.getElementById('sobre').textContent =
+$('sobre').textContent =
 NOME_APP + '\nVersão: ' + VERSAO + '\n' + COPYRIGHT + '. Todos os direitos reservados.\n\n' +
 'MANUAL DE USO\n' +
 '1) Permita o acesso à localização quando o navegador pedir. Use ao ar livre; o GPS do celular costuma errar de 3 a 5 m em céu aberto e mais perto de árvores e prédios.\n' +
-'2) A distância aparece em número grande no topo do mapa. O botão ◎ centraliza o mapa em você; ao arrastar o mapa, ele para de seguir.\n' +
-'3) Mapa > Alvo: toque no mapa para marcar frente, centro e fundo do green. A distância é atualizada conforme você anda.\n' +
-'4) Mapa > Tacada: fique ao lado da bola, toque em “Marcar saída” e aguarde alguns segundos parado. Dê a tacada e caminhe: o número do topo mostra a distância desde a saída ao vivo. Na bola, toque em “Marcar chegada”, escolha o taco e salve.\n' +
-'5) O botão ▾ recolhe o painel para ver mais mapa.\n' +
-'6) Histórico mostra médias por taco. Ajustes permite trocar jardas/metros, o tema (claro/escuro) e editar os tacos.\n' +
-'7) O GPS só fica ligado com a aba Mapa aberta e a tela ativa, para economizar bateria. A saída marcada fica guardada no aparelho.\n' +
-'8) A distância é em linha reta sobre o terreno (horizontal): não considera desnível, vento ou altitude. O app mostra a incerteza informada pelo GPS.\n' +
-'9) Em competições, confira se a regra local permite aparelhos de medição de distância.\n\n' +
+'2) A distância aparece em número grande no topo do mapa. O botão ◎ centraliza o mapa em você; ao arrastar o mapa, ele para de seguir. O botão ▾ recolhe o painel.\n' +
+'3) Mapa > Alvo: toque no mapa para marcar frente, centro e fundo do green. Com “+ Ponto” você marca outros alvos (bunker, água, lay-up, área de queda, árvore ou nome livre), até ' + MAX_LIVRES + '. Na lista, ★ escolhe qual alvo aparece no número grande e ✕ remove o alvo.\n' +
+'4) Mapa > Tacada: medir é opcional e nunca é exigido. Para medir: fique ao lado da bola, toque em “Marcar saída” e aguarde parado. Dê a tacada e caminhe: o número do topo mostra a distância desde a saída ao vivo. Na bola, toque em “Marcar chegada”, escolha o taco e salve.\n' +
+'5) Depois de salvar, a chegada vira automaticamente a saída da próxima tacada (sequência). Se mexeu na bola, use “Refazer saída”. “Encerrar sequência” zera a contagem (por exemplo, no fim do buraco).\n' +
+'6) “Cancelar medição” interrompe a medição em andamento. “Não medir esta tacada” descarta a marcação atual sem registrar nada.\n' +
+'7) Se esqueceu de marcar uma tacada, ao salvar informe “Tacadas nesta medição” (2 ou mais). A distância fica no histórico, mas fora das médias por taco.\n' +
+'8) Histórico: médias por taco e lista de tacadas, com edição (taco e quantidade) e exclusão de cada tacada.\n' +
+'9) Ajustes: jardas/metros, tema (claro/escuro), tacos, exportação em CSV, backup e restauração. O backup é manual e fica em arquivo; nada é enviado a servidor.\n' +
+'10) O GPS só fica ligado com a aba Mapa aberta e a tela ativa, para economizar bateria.\n' +
+'11) A distância é em linha reta sobre o terreno (horizontal): não considera desnível, vento ou altitude. Pontos marcados no mapa herdam o erro de alinhamento da imagem de satélite (alguns metros).\n' +
+'12) Em competições, confira se a regra local permite aparelhos de medição de distância.\n\n' +
 'TERMOS DE USO (MINUTA — revisar antes de distribuir)\n' +
 'Este aplicativo é fornecido “no estado em que se encontra”, sem garantia de precisão ou de adequação a finalidade específica. As distâncias são estimativas obtidas por GPS e não substituem medição profissional nem servem como prova técnica. O usuário é responsável por seu uso, inclusive quanto às regras de competições e do campo.\n\n' +
 'POLÍTICA DE PRIVACIDADE (MINUTA — revisar antes de distribuir)\n' +
-'A localização é lida pelo navegador e processada somente no seu aparelho. O app não envia sua posição a servidor próprio. O histórico e os ajustes ficam no armazenamento local do navegador e podem ser apagados no próprio app. Ao exibir o mapa, o aparelho solicita imagens de satélite aos servidores do provedor do mapa (Esri), que podem registrar dados técnicos da requisição, como endereço IP e a região do mapa pedida. Dados de localização são dados pessoais (LGPD, Lei 13.709/2018). Contato do controlador: PENDENTE.\n\n' +
+'A localização é lida pelo navegador e processada somente no seu aparelho. O app não envia sua posição a servidor próprio. O histórico e os ajustes ficam no armazenamento local do navegador e podem ser apagados no próprio app. Backups e arquivos CSV só são gerados quando você pede e ficam sob seu controle; se você os compartilhar, o destino passa a tratar esses dados. Ao exibir o mapa, o aparelho solicita imagens de satélite aos servidores do provedor do mapa (Esri), que podem registrar dados técnicos da requisição, como endereço IP e a região do mapa pedida. Dados de localização são dados pessoais (LGPD, Lei 13.709/2018). Contato do controlador: PENDENTE.\n\n' +
 'CRÉDITOS E LICENÇAS\n' +
 '• Leaflet 1.9.4 — © Vladimir Agafonkin e colaboradores, licença BSD-2-Clause (leafletjs.com).\n' +
 '• Imagens de satélite: Esri World Imagery — Esri, Maxar, Earthstar Geographics e comunidade de usuários GIS. Sujeito aos termos de uso do provedor; confirmar a adequação ao uso pretendido (inclusive distribuição a terceiros) antes de publicar.\n' +
@@ -506,15 +815,17 @@ document.querySelectorAll('nav button').forEach(function(b){
     document.querySelectorAll('.tela').forEach(function(t){ t.classList.toggle('ativa', t.id===telaAtual); });
     if(telaAtual==='tela-mapa') setTimeout(function(){ map.invalidateSize(); }, 50);
     if(telaAtual==='tela-hist') renderHist();
+    if(telaAtual==='tela-ajustes') mostraUltimoBackup();
     sincronizaGps();
   });
 });
 
 // ---------- início ----------
-renderTacos(); renderHist(); desenhaTacada(); restauraBotoesTacada(); atualizaAlvo(); atualizaHud();
+renderTacos(); renderHist(); desenhaTacada(); renderAlvos(); atualizaBotoesTacada(); atualizaHud(); mostraUltimoBackup();
 if(saida){ map.setView([saida.lat, saida.lng], 17); }
 sincronizaGps();
 if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
+if(window.__GOLFE_TESTE__){ window.__golfeTeste = {validaBackup:validaBackup, gerarCsv:gerarCsv, gerarBackup:gerarBackup, getHist:function(){ return hist; }, getSeq:function(){ return seq; }, getSaida:function(){ return saida; }}; }
 })();
 </script>
 </body>
